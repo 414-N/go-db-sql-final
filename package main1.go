@@ -104,10 +104,8 @@ func main() {
 	}
 	defer db.Close()
 
-	// настройте подключение к БД
-
-	store := NewParcelStore(db)        // создайте объект ParcelStore функцией NewParcelStore
-	service := NewParcelService(store) // создаем объект ParcelService, передавая ему объект ParcelStore для работы с БД
+	store := NewParcelStore(db)
+	service := NewParcelService(store)
 
 	// регистрация посылки
 	client := 1
