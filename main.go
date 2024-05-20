@@ -32,6 +32,7 @@ func NewParcelService(store ParcelStore) ParcelService {
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
+		Number:    0,
 		Client:    client,
 		Status:    ParcelStatusRegistered,
 		Address:   address,

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"crypto/x509"
 	"database/sql"
 	"math/rand"
 	"testing"
-	"text/template/parse"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -33,7 +31,7 @@ func getTestParcel() Parcel {
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
 	// prepare
-	db, err := // настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -45,10 +43,9 @@ func TestAddGetDelete(t *testing.T) {
 	// get
 	// получите только что добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
-	parsel.Number = id
 	get, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, parsel, get)
+	require.Equal(t, parcel, get)
 	// delete
 	err = store.Delete(id)
 	require.NoError(t, err)
@@ -62,7 +59,7 @@ func TestAddGetDelete(t *testing.T) {
 // TestSetAddress проверяет обновление адреса
 func TestSetAddress(t *testing.T) {
 	// prepare
- // настройте подключение к БД
+	// настройте подключение к БД
 	db, err := sql.Open("sqlite", "tracker.db")
 	if err == nil {
 		_, err = db.Exec("CREATE TABLE IF NOT EXISTS parcel (number INTEGER PRIMARY KEY, client INTEGER, status TEXT, address TEXT, created_at TEXT)")
@@ -93,7 +90,7 @@ func TestSetAddress(t *testing.T) {
 // TestSetStatus проверяет обновление статуса
 func TestSetStatus(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite", "tracker.db")// настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -123,6 +120,7 @@ func TestGetByClient(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close() // настройте подключение к БД
 
+	store := NewParcelStore(db)
 	parcels := []Parcel{
 		getTestParcel(),
 		getTestParcel(),
@@ -132,31 +130,24 @@ func TestGetByClient(t *testing.T) {
 
 	// задаём всем посылкам один и тот же идентификатор клиента
 	client := randRange.Intn(10_000_000)
-	parcels[0].Client = client
-	parcels[1].Client = client
-	parcels[2].Client = client
+	for _, parcel := range parcels {
+		parcel.Client = client
+		parcelMap[parcel.Number] = parcel
+	}
 
 	// add
-	for i := 0; i < len(parcels); i++ {
-		id, err := sql.Open("sqlite", "tracker.db")
+	for _, parcel := range parcels {
+		id, err := store.Add(parcel) // добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 		require.NoError(t, err)
-		defer id.Close()// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
-		store := NewParcelStore(id)
-		parsels[i].Client = client
-		parcelMap[id] = parcels[i]
-
-		// обновляем идентификатор добавленной у посылки
-		parcels[i].Number = id 
-
-
-		// сохраняем добавленную посылку в структуру map, чтобы её можно было легко достать по идентификатору посылки
-		parcelMap[id] = parcels[i]
+		require.NotNil(t, id)  //
+		parcel.Number = id     // обновляем идентификатор добавленной у посылки
+		parcelMap[id] = parcel // сохраняем добавленную посылку в структуру map, чтобы её можно было легко достать по идентификатору посылки
 	}
 
 	// get by client
 	storedParcels, err := store.GetByClient(client)
-	require.NoError(t, err) 
-	 // получите список посылок по идентификатору клиента, сохранённого в переменной client
+	require.NoError(t, err)
+	// получите список посылок по идентификатору клиента, сохранённого в переменной client
 	// убедитесь в отсутствии ошибки
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
 
@@ -164,8 +155,6 @@ func TestGetByClient(t *testing.T) {
 	for _, parcel := range storedParcels {
 		require.Equal(t, parcelMap[parcel.Number], parcel)
 
-
-	
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
