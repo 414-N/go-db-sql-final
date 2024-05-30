@@ -31,7 +31,14 @@ func getTestParcel() Parcel {
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
+	// настройте подключение к БД
+	db, err := sql.Open("sqlite", "tracker.db")
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, db.Close())
+		_ = db.Close()
+	}()
+
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -62,11 +69,17 @@ func TestSetAddress(t *testing.T) {
 	// prepare
 	// настройте подключение к БД
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err == nil {
-		_, err = db.Exec("CREATE TABLE IF NOT EXISTS parcel (number INTEGER PRIMARY KEY, client INTEGER, status TEXT, address TEXT, created_at TEXT)")
-	}
 	require.NoError(t, err)
 	defer db.Close()
+
+	_, err = db.Exec("SELECT 1 FROM parcel LIMIT 1")
+	if err != sql.ErrNoRows {
+
+		return
+
+		require.NoError(t, err)
+
+	}
 
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
@@ -89,8 +102,9 @@ func TestSetAddress(t *testing.T) {
 }
 
 // TestSetStatus проверяет обновление статуса
+
 func TestSetStatus(t *testing.T) {
-	// prepare
+
 	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
 	require.NoError(t, err)
 	defer db.Close()
@@ -102,11 +116,11 @@ func TestSetStatus(t *testing.T) {
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
 	require.NotNil(t, id)
-	// set status
+
 	// обновите статус, убедитесь в отсутствии ошибки
 	err = store.SetStatus(id, ParcelStatusSent)
 	require.NoError(t, err)
-	// check
+
 	// получите добавленную посылку и убедитесь, что статус обновился
 	get, err := store.Get(id)
 	require.NoError(t, err)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type ParcelStore struct {
@@ -16,8 +17,9 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 	res, err := s.db.Exec("INSERT INTO parcel (client, status, address, created_at) VALUES ($1, $2, $3, $4) RETURNING number",
 		p.Client, p.Status, p.Address, p.CreatedAt)
 	if err != nil {
-		return 0, err
+		fmt.Println(err)
 	}
+
 	return getLastInsertID(res)
 }
 
