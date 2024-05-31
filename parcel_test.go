@@ -34,10 +34,7 @@ func TestAddGetDelete(t *testing.T) {
 	// настройте подключение к БД
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, db.Close())
-		_ = db.Close()
-	}()
+	defer db.Close()
 
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
@@ -72,12 +69,9 @@ func TestSetAddress(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	_, err = db.Exec("SELECT 1 FROM parcel LIMIT 1")
 	if err != sql.ErrNoRows {
 
 		return
-
-		require.NoError(t, err)
 
 	}
 
