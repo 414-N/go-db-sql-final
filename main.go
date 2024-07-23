@@ -32,6 +32,7 @@ func NewParcelService(store ParcelStore) ParcelService {
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
+		Number:    0,
 		Client:    client,
 		Status:    ParcelStatusRegistered,
 		Address:   address,
@@ -97,10 +98,17 @@ func (s ParcelService) Delete(number int) error {
 }
 
 func main() {
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+
 	// настройте подключение к БД
 
-	store := // создайте объект ParcelStore функцией NewParcelStore
-	service := NewParcelService(store)
+	store := NewParcelStore(db)        // создайте объект ParcelStore функцией NewParcelStore
+	service := NewParcelService(store) // создаем объект ParcelService, передавая ему объект ParcelStore для работы с БД
 
 	// регистрация посылки
 	client := 1
