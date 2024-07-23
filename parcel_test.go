@@ -69,12 +69,6 @@ func TestSetAddress(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	if err != sql.ErrNoRows {
-
-		return
-
-	}
-
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 	// add
